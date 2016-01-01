@@ -569,6 +569,13 @@ class Transmission(object):
 
         return free # free space in bytes
 
+    def get_download_directory(self):
+        request = TransmissionRequest(self.host, self.port, self.path, 'session-get', self.TAG_SESSION_GET)
+        request.send_request()
+        response = request.get_response()
+        dir = response['arguments']['download-dir']
+	return dir
+
     def set_option(self, option_name, option_value):
         request = TransmissionRequest(self.host, self.port, self.path, 'session-set', 1, {option_name: option_value})
         request.send_request()
@@ -1257,7 +1264,7 @@ class Interface(object):
 
             destination = self.dialog_input_text("Destination directory"
                                 + (" - HDD (free): %.3f GB" % free_space if free_space else ""),
-                                        homedir2tilde(os.getcwd()+os.sep), tab_complete='files')
+                                        server.get_download_directory(), tab_complete='files')
 
             error = server.add_torrent(tilde2homedir(location),destination)
             if error:
