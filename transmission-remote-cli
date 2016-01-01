@@ -655,7 +655,7 @@ class Transmission(object):
     def toggle_turtle_mode(self):
         self.set_option('alt-speed-enabled', not self.status_cache['alt-speed-enabled'])
 
-    def add_torrent(self, location):
+    def add_torrent(self, location, destination):
         args = {}
         try:
             with  open(location, 'rb') as fp:
@@ -664,8 +664,10 @@ class Transmission(object):
         # be open by the server
         except IOError:
             args['filename'] = location
-
-        request = TransmissionRequest(self.host, self.port, self.path, 'torrent-add', 1, args)
+	
+	args['download-dir'] = destination
+        
+	request = TransmissionRequest(self.host, self.port, self.path, 'torrent-add', 1, args)
         request.send_request()
         response = request.get_response()
         if response['result'] != 'success':
@@ -1253,7 +1255,11 @@ class Interface(object):
             if re.match('^[0-9a-fA-F]{40}$', location):
                 location = 'magnet:?xt=urn:btih:{}'.format(location)
 
-            error = server.add_torrent(tilde2homedir(location))
+            destination = self.dialog_input_text("Destination directory"
+                                + (" - HDD (free): %.3f GB" % free_space if free_space else ""),
+                                        homedir2tilde(os.getcwd()+os.sep), tab_complete='files')
+
+            error = server.add_torrent(tilde2homedir(location),destination)
             if error:
                 msg = wrap("Couldn't add torrent \"%s\":" % location)
                 msg.extend(wrap(error, self.width-4))
